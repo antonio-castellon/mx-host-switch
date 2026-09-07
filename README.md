@@ -1,8 +1,10 @@
 # MX Host Switch
 
-Tray app that switches a Logitech mouse to another Easy-Switch / multi-host channel using HID++ **CHANGE HOST** (`0x1814`).
+Tray app that moves a Logitech multi-host mouse between computers the way **Logi Flow** does: push the pointer off the left or right edge of the screen, and the mouse follows to the machine assigned to that side. No button on the underside, no double-click.
 
-On Windows, double-click the tray icon to jump to a preselected channel. Right-click to pick that target (the tick marks the default). On Linux and macOS, use **Switch now** from the tray menu (or click the icon).
+It talks to the mouse over HID++ **CHANGE HOST** (`0x1814`). Assign **Left** and **Right** under **Edge switch** (default is **None** — no action). Double-click on the tray icon is still there if you want a manual jump.
+
+![Tray menu: Edge switch, right edge assigned to Channel 1](assets/tray-menu.png)
 
 ## Download (no compile)
 
@@ -25,13 +27,11 @@ No Python, no installer, no compile.
 
 The source in this repository is for people who want to build it themselves.
 
-![Tray menu: MX Anywhere 2 on Channel 2, switch target Channel 1 selected](assets/tray-menu.png)
-
 ## Why this exists
 
-The MX Anywhere 2 is an older multi-channel mouse. Logitech’s current **Logi Options+** app simply does not support it (no CHANGE HOST / Easy-Switch control, with no real explanation). Switching computers meant flipping the mouse over and pressing the channel button on the underside every time.
+The MX Anywhere 2 is an older multi-channel mouse. Logitech’s current **Logi Options+** app does not support it, and **Logi Flow** (move the mouse off the screen to another computer) was never offered for this model.
 
-This tray app talks to the mouse over HID++ instead, so a double-click on the icon sends CHANGE HOST and the pointer jumps to the other machine.
+Switching machines meant flipping the mouse over and pressing the Easy-Switch button every time. This tray app sends the same HID++ CHANGE HOST command Flow would use, so the pointer can leave the left or right edge of the display and land on the other PC.
 
 ## Compatibility
 
@@ -103,11 +103,11 @@ If you see `CHANGE HOST devices:` and three channels, the app can drive it. If y
 
 ## Features
 
-- Stays in the Windows notification area (system tray)
-- **Double-click** sends CHANGE HOST to the selected target channel
-- **Right-click** menu lists channels; a **tick** shows the default target
+- Stays in the notification area (system tray)
+- **Edge switch** (Flow-style): push the pointer off the left or right of the screen to jump to the channel assigned to that side (`None` = no action)
+- Manual **Switch now** / double-click still available
+- Right-click menu lists channels; a tick marks the selection
 - Prefers a device named like “Anywhere 2” when several HID++ devices are present
-- Optional **edge switch**: hold the pointer on the left or right screen edge to jump to the channel assigned to that side (`None` = no action)
 - Optional channel labels in a JSON config file
 - CLI to list devices or switch without the tray
 
@@ -177,9 +177,9 @@ GitHub Actions (`.github/workflows/release.yml`) builds all four artifacts when 
 | Action | Result |
 | --- | --- |
 | Right-click the icon | Open the menu |
-| Click a channel under **Switch target** | Set it as the double-click target (tick moves) |
-| **Switch now** or **double-click** | Send CHANGE HOST to the ticked channel |
-| **Edge switch → Left / Right** | When the pointer sits on that screen edge, switch to the assigned channel. **None (no action)** is the default |
+| **Edge switch → Left / Right** | Flow-style: push the pointer off that screen edge to jump to the assigned channel. **None (no action)** is the default |
+| Click a channel under **Switch target** | Manual jump target (tick moves) |
+| **Switch now** or **double-click** | Optional manual CHANGE HOST (not required once edges are assigned) |
 | Refresh mouse | Re-scan HID++ devices |
 | **About** | App version, author, email, website |
 | Quit | Exit the tray app |
@@ -188,7 +188,7 @@ After a successful switch the mouse leaves this PC. The icon stays in the tray s
 
 Windows 11 often hides the icon behind the `^` overflow in the notification area.
 
-This PC’s current channel is labelled **(this PC)** in the menu. Double-click does nothing useful if the ticked target is already the current channel.
+This PC’s current channel is labelled **(this PC)** in the menu.
 
 ### Edge switch
 
