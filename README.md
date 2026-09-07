@@ -26,11 +26,63 @@ This tray app talks to the mouse over HID++ instead, so a double-click on the ic
 
 ## Compatibility
 
-The app is written for **any Logitech HID++ 2.0+ mouse that exposes CHANGE HOST** (Easy-Switch / multi-computer pairing), over Bluetooth or a Unifying / Bolt / Nano receiver.
+The app is written for **any Logitech HID++ 2.0+ mouse that exposes CHANGE HOST** (`0x1814` — Easy-Switch / multi-computer pairing), over Bluetooth or a Unifying / Bolt / Nano receiver.
 
 It discovers devices at runtime: it does not hard-code a single model. Channel count, current host, and the CHANGE HOST feature index are read from the mouse.
 
-**Tested only with Logitech MX Anywhere 2** (Bluetooth PID `B01F`, HID++ 4.5, three Easy-Switch channels). Other MX / multi-host mice (Anywhere 3, Master series, etc.) are expected to work but have not been verified.
+### Tested
+
+| Mouse | Connection | Result |
+| --- | --- | --- |
+| **MX Anywhere 2** | Bluetooth (PID `B01F`), HID++ 4.5, 3 channels | Works |
+
+### Maybe compatible (not tested here)
+
+These mice are multi-channel / Easy-Switch and, in Solaar dumps or Logitech docs, expose HID++ CHANGE HOST. They **should** work with this app, but nobody has verified them with MX Host Switch yet.
+
+**MX Master**
+
+- MX Master (original)
+- MX Master 2S
+- MX Master 3 / 3 for Mac / 3 for Business
+- MX Master 3S / 3S for Mac / 3S for Business
+- MX Master 4 / 4 for Mac / 4 for Business
+
+**MX Anywhere**
+
+- MX Anywhere 2 (Unifying variants `404A` / `4072`, Bluetooth `B013` / `B018` / `B01F`)
+- MX Anywhere 2S
+- MX Anywhere 3 / 3 for Mac / 3 for Business
+- MX Anywhere 3S / 3S for Mac / 3S for Business
+
+**Other Easy-Switch mice / trackballs**
+
+- MX Vertical
+- MX Ergo
+- M720 Triathlon
+- M585 / M590 Multi-Device
+- Lift / Lift for Mac
+- Pebble Mouse 2 (M350s)
+- POP Mouse
+- Signature M750 / Signature AI Edition M750
+
+If several Logitech devices are connected, the tray app prefers a name matching `Anywhere 2`. For another model, set `preferred_name` in `%APPDATA%\MXHostSwitch\config.json` (for example `"Master 3"`) or run `mx_host_switch.py -l` and confirm CHANGE HOST is listed.
+
+### Probably not compatible
+
+- First-generation **Anywhere MX** and **Performance MX** (HID++ 1.0, no CHANGE HOST)
+- Single-computer mice with no Easy-Switch button (most M185 / M170 / G-series gaming mice)
+- Keyboards (MX Keys, etc.): they speak the same HID++ feature, but this app is a **mouse** tray tool
+
+### How to check your mouse
+
+With the mouse on this PC:
+
+```powershell
+python mx_host_switch.py -l
+```
+
+If you see `CHANGE HOST devices:` and three channels, the app can drive it. If you only see `HID++ interfaces` and no CHANGE HOST device, this mouse is not supported (or Logi Options+ is locking the HID++ collection).
 
 ## Features
 
