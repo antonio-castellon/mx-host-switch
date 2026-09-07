@@ -1,5 +1,6 @@
 .venv/
 venv/
+_release_artifacts/
 __pycache__/
 *.py[cod]
 *$py.class
