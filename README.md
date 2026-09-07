@@ -4,6 +4,8 @@ Windows tray app that switches a Logitech mouse to another Easy-Switch / multi-h
 
 Double-click the tray icon to jump to a preselected channel. Right-click to pick that target (the tick marks the default).
 
+![Tray menu: MX Anywhere 2 on Channel 2, switch target Channel 1 selected](assets/tray-menu.png)
+
 ## Compatibility
 
 The app is written for **any Logitech HID++ 2.0+ mouse that exposes CHANGE HOST** (Easy-Switch / multi-computer pairing), over Bluetooth or a Unifying / Bolt / Nano receiver.
