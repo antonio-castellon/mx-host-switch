@@ -181,6 +181,7 @@ GitHub Actions (`.github/workflows/release.yml`) builds all four artifacts when 
 | Click a channel under **Switch target** | Manual jump target (tick moves) |
 | **Switch now** or **double-click** | Optional manual CHANGE HOST (not required once edges are assigned) |
 | Refresh mouse | Re-scan HID++ devices |
+| **Show notifications** | Off by default. When on, Windows toasts for menu actions. Host switches never toast |
 | **About** | App version, author, email, website |
 | Quit | Exit the tray app |
 
@@ -218,7 +219,8 @@ Settings are stored in:
     "2": ""
   },
   "edge_left_host": null,
-  "edge_right_host": 0
+  "edge_right_host": 0,
+  "show_notifications": false
 }
 ```
 
@@ -230,6 +232,7 @@ Settings are stored in:
 | `channel_names` | Optional labels (`"0"` = Channel 1, `"1"` = Channel 2, …) |
 | `edge_left_host` | Channel for the left screen edge, or `null` for none |
 | `edge_right_host` | Channel for the right screen edge, or `null` for none |
+| `show_notifications` | Windows toasts for menu actions (`false` by default). Successful host switches never toast |
 
 Log file: `mxhost.log` in the same folder.
 

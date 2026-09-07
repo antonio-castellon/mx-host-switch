@@ -23,6 +23,7 @@ DEFAULTS: dict[str, Any] = {
     },
     "edge_left_host": None,
     "edge_right_host": None,
+    "show_notifications": False,
 }
 
 
@@ -68,6 +69,7 @@ def load() -> dict[str, Any]:
     data["target_host"] = int(data.get("target_host", 1))
     data["edge_left_host"] = _optional_host(data.get("edge_left_host"))
     data["edge_right_host"] = _optional_host(data.get("edge_right_host"))
+    data["show_notifications"] = bool(data.get("show_notifications", False))
     return data
 
 

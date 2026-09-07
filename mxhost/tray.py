@@ -85,7 +85,7 @@ class TrayApp:
                 extra = ""
                 if hidpp.options_plus_running():
                     extra = " Logi Options+ is running and may be blocking HID++."
-                self._notify("No Logitech mouse with CHANGE HOST was found." + extra)
+                self._notify("No Logitech mouse with CHANGE HOST was found." + extra, error=True)
 
     def _ensure_target(self) -> None:
         if not self.device:
@@ -139,6 +139,11 @@ class TrayApp:
             MenuItem("Edge switch", Menu(*self._edge_menu_items())),
             Menu.SEPARATOR,
             MenuItem("Refresh mouse", lambda *_: self.refresh(notify=True)),
+            MenuItem(
+                "Show notifications",
+                self._toggle_notifications,
+                checked=lambda item: bool(self.cfg.get("show_notifications")),
+            ),
             MenuItem("About", Menu(*self._about_items())),
             MenuItem("Quit", self._quit),
         ]
@@ -276,7 +281,7 @@ class TrayApp:
                 )
             except Exception as exc:
                 log.exception("Rediscovery failed")
-                self._notify(f"Could not talk to the mouse: {exc}")
+                self._notify(f"Could not talk to the mouse: {exc}", error=True)
                 return
             self.devices = devices
             self.device = device
@@ -284,7 +289,7 @@ class TrayApp:
                 extra = ""
                 if hidpp.options_plus_running():
                     extra = " Close Logi Options+ and try again."
-                self._notify("MX Anywhere 2 not found on this PC." + extra)
+                self._notify("MX Anywhere 2 not found on this PC." + extra, error=True)
                 return
             if target == device.current_host:
                 if reason == "menu":
@@ -293,19 +298,31 @@ class TrayApp:
             try:
                 hidpp.switch_host(device, target)
             except hidpp.HidppError as exc:
-                self._notify(str(exc))
+                self._notify(str(exc), error=True)
                 return
             except Exception as exc:
                 log.exception("CHANGE HOST failed")
                 extra = ""
                 if hidpp.options_plus_running():
                     extra = " Logi Options+ may be locking the HID++ interface."
-                self._notify(f"Switch failed: {exc}.{extra}")
+                self._notify(f"Switch failed: {exc}.{extra}", error=True)
                 return
-            self._notify(f"Switching {device.name} to Channel {target + 1} ({reason})")
+            log.info("Switching %s to Channel %s (%s)", device.name, target + 1, reason)
 
-    def _notify(self, message: str) -> None:
+    def _toggle_notifications(self, icon, item) -> None:  # noqa: ARG002
+        self.cfg["show_notifications"] = not bool(self.cfg.get("show_notifications"))
+        save(self.cfg)
+        if self.icon:
+            self.icon.menu = self._menu()
+            try:
+                self.icon.update_menu()
+            except Exception:
+                pass
+
+    def _notify(self, message: str, *, error: bool = False) -> None:
         log.info(message)
+        if not error and not self.cfg.get("show_notifications"):
+            return
         icon = self.icon
         if icon is None:
             return
