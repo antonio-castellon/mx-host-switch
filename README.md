@@ -6,6 +6,12 @@ Double-click the tray icon to jump to a preselected channel. Right-click to pick
 
 ![Tray menu: MX Anywhere 2 on Channel 2, switch target Channel 1 selected](assets/tray-menu.png)
 
+## Why this exists
+
+The MX Anywhere 2 is an older multi-channel mouse. Logitech’s current **Logi Options+** app simply does not support it (no CHANGE HOST / Easy-Switch control, with no real explanation). Switching computers meant flipping the mouse over and pressing the channel button on the underside every time.
+
+This tray app talks to the mouse over HID++ instead, so a double-click on the icon sends CHANGE HOST and the pointer jumps to the other machine.
+
 ## Compatibility
 
 The app is written for **any Logitech HID++ 2.0+ mouse that exposes CHANGE HOST** (Easy-Switch / multi-computer pairing), over Bluetooth or a Unifying / Bolt / Nano receiver.
