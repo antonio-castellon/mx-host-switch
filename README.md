@@ -38,7 +38,7 @@ It discovers devices at runtime: it does not hard-code a single model. Channel c
 
 ### Maybe compatible (not tested here)
 
-These mice are multi-channel / Easy-Switch and, in Solaar dumps or Logitech docs, expose HID++ CHANGE HOST. They **should** work with this app, but nobody has verified them with MX Host Switch yet.
+These **Logitech** mice are multi-channel / Easy-Switch and, in Solaar dumps or Logitech docs, expose HID++ CHANGE HOST. They **should** work with this app, but nobody has verified them with MX Host Switch yet.
 
 **MX Master**
 
@@ -73,6 +73,14 @@ If several Logitech devices are connected, the tray app prefers a name matching 
 - First-generation **Anywhere MX** and **Performance MX** (HID++ 1.0, no CHANGE HOST)
 - Single-computer mice with no Easy-Switch button (most M185 / M170 / G-series gaming mice)
 - Keyboards (MX Keys, etc.): they speak the same HID++ feature, but this app is a **mouse** tray tool
+
+### Other brands
+
+**No.** Microsoft, Apple, Razer, Corsair, Dell, HP, Keychron, Elecom, and similar multi-device mice cannot use this app.
+
+Channel switching here is not generic Bluetooth. It sends Logitech’s private **HID++ CHANGE HOST** command (`0x1814`) to vendor ID `046D`. Other brands either use the operating system’s Bluetooth stack or their own protocol (Synapse, iCUE, …). This tool does not speak those.
+
+A mouse that “pairs with 3 computers” is not enough. It must be a Logitech HID++ Easy-Switch device.
 
 ### How to check your mouse
 
