@@ -5,12 +5,13 @@ from __future__ import annotations
 import logging
 import sys
 import threading
+import webbrowser
 from typing import Callable, Optional
 
 import pystray
 from pystray import Menu, MenuItem
 
-from . import APP_NAME, hidpp
+from . import APP_NAME, AUTHOR_EMAIL, AUTHOR_NAME, AUTHOR_URL, VERSION, hidpp
 from .config import channel_label, load, save
 from .edge import EdgeWatcher
 from .icon import render_tray_image
@@ -138,6 +139,7 @@ class TrayApp:
             MenuItem("Edge switch", Menu(*self._edge_menu_items())),
             Menu.SEPARATOR,
             MenuItem("Refresh mouse", lambda *_: self.refresh(notify=True)),
+            MenuItem("About", Menu(*self._about_items())),
             MenuItem("Quit", self._quit),
         ]
         return Menu(*items)
@@ -231,6 +233,31 @@ class TrayApp:
                 )
             )
         return items
+
+    def _about_items(self) -> list[MenuItem]:
+        return [
+            MenuItem(f"{APP_NAME}  {VERSION}", lambda *_: self._show_about(), default=False),
+            MenuItem(AUTHOR_NAME, lambda *_: None, enabled=False),
+            MenuItem(AUTHOR_EMAIL, lambda *_: webbrowser.open(f"mailto:{AUTHOR_EMAIL}")),
+            MenuItem(AUTHOR_URL.replace("https://", ""), lambda *_: webbrowser.open(AUTHOR_URL)),
+        ]
+
+    def _show_about(self) -> None:
+        text = (
+            f"{APP_NAME} {VERSION}\n\n"
+            f"{AUTHOR_NAME}\n"
+            f"{AUTHOR_EMAIL}\n"
+            f"{AUTHOR_URL}"
+        )
+        if sys.platform == "win32":
+            try:
+                import ctypes
+
+                ctypes.windll.user32.MessageBoxW(None, text, f"About {APP_NAME}", 0x40)
+                return
+            except Exception:
+                log.debug("About dialog failed", exc_info=True)
+        self._notify(text.replace("\n\n", " — ").replace("\n", " · "))
 
     def _on_edge(self, side: str, host: int) -> None:
         self.switch_to_host(host, reason=f"{side} edge")

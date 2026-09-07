@@ -181,6 +181,7 @@ GitHub Actions (`.github/workflows/release.yml`) builds all four artifacts when 
 | **Switch now** or **double-click** | Send CHANGE HOST to the ticked channel |
 | **Edge switch → Left / Right** | When the pointer sits on that screen edge, switch to the assigned channel. **None (no action)** is the default |
 | Refresh mouse | Re-scan HID++ devices |
+| **About** | App version, author, email, website |
 | Quit | Exit the tray app |
 
 After a successful switch the mouse leaves this PC. The icon stays in the tray so you can switch again when you come back.
