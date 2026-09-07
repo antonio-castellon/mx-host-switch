@@ -107,6 +107,7 @@ If you see `CHANGE HOST devices:` and three channels, the app can drive it. If y
 - **Double-click** sends CHANGE HOST to the selected target channel
 - **Right-click** menu lists channels; a **tick** shows the default target
 - Prefers a device named like “Anywhere 2” when several HID++ devices are present
+- Optional **edge switch**: hold the pointer on the left or right screen edge to jump to the channel assigned to that side (`None` = no action)
 - Optional channel labels in a JSON config file
 - CLI to list devices or switch without the tray
 
@@ -176,8 +177,9 @@ GitHub Actions (`.github/workflows/release.yml`) builds all four artifacts when 
 | Action | Result |
 | --- | --- |
 | Right-click the icon | Open the menu |
-| Click a channel | Set it as the double-click target (tick moves) |
+| Click a channel under **Switch target** | Set it as the double-click target (tick moves) |
 | **Switch now** or **double-click** | Send CHANGE HOST to the ticked channel |
+| **Edge switch → Left / Right** | When the pointer sits on that screen edge, switch to the assigned channel. **None (no action)** is the default |
 | Refresh mouse | Re-scan HID++ devices |
 | Quit | Exit the tray app |
 
@@ -186,6 +188,15 @@ After a successful switch the mouse leaves this PC. The icon stays in the tray s
 Windows 11 often hides the icon behind the `^` overflow in the notification area.
 
 This PC’s current channel is labelled **(this PC)** in the menu. Double-click does nothing useful if the ticked target is already the current channel.
+
+### Edge switch
+
+Windows (and other desktops that report a cursor position) cannot place the pointer *outside* the screen, so the app treats “pushed against the left or right edge for a short moment” as leaving that side.
+
+- Assign **Left** and **Right** independently under **Edge switch**
+- **None (no action)** means that edge does nothing
+- After a switch, the edge is ignored until the pointer moves back inland, so coming back to this PC does not immediately bounce away again
+- Top and bottom corners are ignored (Start menu / clock)
 
 ## Configuration
 
@@ -204,7 +215,9 @@ Settings are stored in:
     "0": "Home PC",
     "1": "Work laptop",
     "2": ""
-  }
+  },
+  "edge_left_host": null,
+  "edge_right_host": 0
 }
 ```
 
@@ -214,6 +227,8 @@ Settings are stored in:
 | `preferred_wpid` | Prefer this wireless/Bluetooth product ID when several devices exist |
 | `preferred_name` | Substring match on the device name (default `Anywhere 2`) |
 | `channel_names` | Optional labels (`"0"` = Channel 1, `"1"` = Channel 2, …) |
+| `edge_left_host` | Channel for the left screen edge, or `null` for none |
+| `edge_right_host` | Channel for the right screen edge, or `null` for none |
 
 Log file: `mxhost.log` in the same folder.
 
@@ -241,6 +256,7 @@ mx_host_switch.py   # entry point (tray / CLI)
 mxhost/
   hidpp.py          # HID++ discovery and CHANGE HOST
   tray.py           # system-tray UI
+  edge.py           # left/right screen-edge host switch
   config.py         # settings (AppData / Application Support / ~/.config)
   icon.py           # generated tray / exe icon
 build.ps1           # Windows PyInstaller one-file build

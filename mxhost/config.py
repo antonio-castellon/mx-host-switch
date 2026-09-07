@@ -21,6 +21,8 @@ DEFAULTS: dict[str, Any] = {
         "1": "",
         "2": "",
     },
+    "edge_left_host": None,
+    "edge_right_host": None,
 }
 
 
@@ -64,7 +66,18 @@ def load() -> dict[str, Any]:
         except Exception:
             log.exception("Failed to read %s", path)
     data["target_host"] = int(data.get("target_host", 1))
+    data["edge_left_host"] = _optional_host(data.get("edge_left_host"))
+    data["edge_right_host"] = _optional_host(data.get("edge_right_host"))
     return data
+
+
+def _optional_host(value: Any) -> int | None:
+    if value is None or value == "" or str(value).lower() == "none":
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        return None
 
 
 def save(data: dict[str, Any]) -> None:

@@ -12,6 +12,7 @@ from pystray import Menu, MenuItem
 
 from . import APP_NAME, hidpp
 from .config import channel_label, load, save
+from .edge import EdgeWatcher
 from .icon import render_tray_image
 
 log = logging.getLogger("mxhost.tray")
@@ -43,6 +44,7 @@ class TrayApp:
         self.device: Optional[hidpp.ChangeHostDevice] = None
         self.icon: Optional[pystray.Icon] = None
         self._lock = threading.Lock()
+        self._edge = EdgeWatcher(self._edge_assignments, self._on_edge)
         self.refresh(notify=False)
 
     @property
@@ -133,6 +135,7 @@ class TrayApp:
             MenuItem(self._switch_label(), lambda *_: self.switch_to_selected(), default=True),
             Menu.SEPARATOR,
             MenuItem("Switch target", Menu(*self._channel_items())),
+            MenuItem("Edge switch", Menu(*self._edge_menu_items())),
             Menu.SEPARATOR,
             MenuItem("Refresh mouse", lambda *_: self.refresh(notify=True)),
             MenuItem("Quit", self._quit),
@@ -179,7 +182,63 @@ class TrayApp:
     def _make_checked(self, index: int):
         return lambda item, i=index: self.target_host == i
 
+    def _edge_host(self, side: str) -> Optional[int]:
+        key = "edge_left_host" if side == "left" else "edge_right_host"
+        value = self.cfg.get(key)
+        return None if value is None else int(value)
+
+    def _set_edge_host(self, side: str, host: Optional[int]) -> None:
+        key = "edge_left_host" if side == "left" else "edge_right_host"
+        self.cfg[key] = host
+        save(self.cfg)
+        if self.icon:
+            self.icon.menu = self._menu()
+            try:
+                self.icon.update_menu()
+            except Exception:
+                pass
+        label = "None (no action)" if host is None else f"Channel {host + 1}"
+        self._notify(f"{side.capitalize()} edge → {label}")
+
+    def _edge_assignments(self) -> tuple[Optional[int], Optional[int]]:
+        return self._edge_host("left"), self._edge_host("right")
+
+    def _edge_menu_items(self) -> list[MenuItem]:
+        return [
+            MenuItem("Left", Menu(*self._edge_side_items("left"))),
+            MenuItem("Right", Menu(*self._edge_side_items("right"))),
+        ]
+
+    def _edge_side_items(self, side: str) -> list[MenuItem]:
+        count = self.device.host_count if self.device else 3
+        names = self.cfg.get("channel_names") or {}
+        items = [
+            MenuItem(
+                "None (no action)",
+                lambda *_ , s=side: self._set_edge_host(s, None),
+                checked=lambda item, s=side: self._edge_host(s) is None,
+                radio=True,
+            )
+        ]
+        for index in range(count):
+            label = self._channel_menu_label(index, names.get(str(index), ""))
+            items.append(
+                MenuItem(
+                    label,
+                    lambda *_, s=side, i=index: self._set_edge_host(s, i),
+                    checked=lambda item, s=side, i=index: self._edge_host(s) == i,
+                    radio=True,
+                )
+            )
+        return items
+
+    def _on_edge(self, side: str, host: int) -> None:
+        self.switch_to_host(host, reason=f"{side} edge")
+
     def switch_to_selected(self) -> None:
+        self.switch_to_host(self.target_host, reason="menu")
+
+    def switch_to_host(self, target: int, reason: str = "menu") -> None:
         with self._lock:
             try:
                 devices = hidpp.find_change_host_devices()
@@ -200,9 +259,9 @@ class TrayApp:
                     extra = " Close Logi Options+ and try again."
                 self._notify("MX Anywhere 2 not found on this PC." + extra)
                 return
-            target = self.target_host
             if target == device.current_host:
-                self._notify(f"Already on Channel {target + 1}. Pick another target in the menu.")
+                if reason == "menu":
+                    self._notify(f"Already on Channel {target + 1}. Pick another target in the menu.")
                 return
             try:
                 hidpp.switch_host(device, target)
@@ -216,7 +275,7 @@ class TrayApp:
                     extra = " Logi Options+ may be locking the HID++ interface."
                 self._notify(f"Switch failed: {exc}.{extra}")
                 return
-            self._notify(f"Switching {device.name} to Channel {target + 1}")
+            self._notify(f"Switching {device.name} to Channel {target + 1} ({reason})")
 
     def _notify(self, message: str) -> None:
         log.info(message)
@@ -229,10 +288,12 @@ class TrayApp:
             log.debug("notify failed", exc_info=True)
 
     def _quit(self, icon, item) -> None:  # noqa: ARG002
+        self._edge.stop()
         icon.visible = False
         icon.stop()
 
     def run(self) -> None:
+        self._edge.start()
         kwargs = {
             "name": "MXHostSwitch",
             "icon": render_tray_image(64),
@@ -243,7 +304,10 @@ class TrayApp:
             self.icon = DoubleClickIcon(on_double_click=self.switch_to_selected, **kwargs)
         else:
             self.icon = pystray.Icon(**kwargs)
-        self.icon.run()
+        try:
+            self.icon.run()
+        finally:
+            self._edge.stop()
 
 
 def run_tray() -> None:
