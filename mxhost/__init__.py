@@ -2,4 +2,4 @@
 
 APP_NAME = "MX Host Switch"
 APP_ID = "MXHostSwitch"
-VERSION = "1.0.0"
+VERSION = "1.1.0"

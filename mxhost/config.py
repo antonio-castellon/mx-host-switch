@@ -5,6 +5,7 @@ from __future__ import annotations
 import json
 import logging
 import os
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -24,8 +25,14 @@ DEFAULTS: dict[str, Any] = {
 
 
 def app_data_dir() -> Path:
-    base = os.environ.get("APPDATA") or str(Path.home() / "AppData" / "Roaming")
-    path = Path(base) / APP_DIR_NAME
+    if sys.platform == "win32":
+        base = os.environ.get("APPDATA") or str(Path.home() / "AppData" / "Roaming")
+        path = Path(base) / APP_DIR_NAME
+    elif sys.platform == "darwin":
+        path = Path.home() / "Library" / "Application Support" / APP_DIR_NAME
+    else:
+        base = os.environ.get("XDG_CONFIG_HOME") or str(Path.home() / ".config")
+        path = Path(base) / "mxhostswitch"
     path.mkdir(parents=True, exist_ok=True)
     return path
 

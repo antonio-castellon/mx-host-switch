@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import logging
 import socket
+import subprocess
+import sys
 import time
 from dataclasses import dataclass, field
 from typing import Any, Iterable, Optional
@@ -140,6 +142,9 @@ def _score_hidpp_collection(info: dict) -> int:
         score = max(score, 95)
     if "receiver" in product:
         score = max(score, 60)
+    # Linux hidraw often reports usage_page 0 for every collection.
+    if score == 0 and up == 0 and int(info.get("vendor_id") or 0) == LOGITECH_VID:
+        score = 25
     return score
 
 
@@ -164,25 +169,27 @@ def enumerate_hidpp_interfaces() -> list[HidInterface]:
         grouped.setdefault(key, []).append((score, info))
 
     result: list[HidInterface] = []
+    keep_all = sys.platform.startswith("linux")
     for (_vid, pid, serial), items in grouped.items():
         items.sort(key=lambda pair: pair[0], reverse=True)
-        info = items[0][1]
-        product = _decode_str(info.get("product_string"))
-        is_receiver = pid in RECEIVER_PIDS or "receiver" in product.lower()
-        result.append(
-            HidInterface(
-                path=info["path"],
-                vendor_id=int(info.get("vendor_id") or 0),
-                product_id=pid,
-                usage_page=int(info.get("usage_page") or 0),
-                usage=int(info.get("usage") or 0),
-                interface_number=int(info.get("interface_number") or -1),
-                product_string=product,
-                manufacturer_string=_decode_str(info.get("manufacturer_string")),
-                serial=serial,
-                is_receiver=is_receiver,
+        chosen = items if keep_all else items[:1]
+        for _score, info in chosen:
+            product = _decode_str(info.get("product_string"))
+            is_receiver = pid in RECEIVER_PIDS or "receiver" in product.lower()
+            result.append(
+                HidInterface(
+                    path=info["path"],
+                    vendor_id=int(info.get("vendor_id") or 0),
+                    product_id=pid,
+                    usage_page=int(info.get("usage_page") or 0),
+                    usage=int(info.get("usage") or 0),
+                    interface_number=int(info.get("interface_number") or -1),
+                    product_string=product,
+                    manufacturer_string=_decode_str(info.get("manufacturer_string")),
+                    serial=serial,
+                    is_receiver=is_receiver,
+                )
             )
-        )
     return result
 
 
@@ -536,6 +543,7 @@ def _probe_slot(conn: HidppConnection, device_index: int) -> Optional[ChangeHost
 
 def find_change_host_devices() -> list[ChangeHostDevice]:
     found: list[ChangeHostDevice] = []
+    seen: set[tuple[str, int]] = set()
     for iface in enumerate_hidpp_interfaces():
         try:
             with HidppConnection(iface) as conn:
@@ -546,6 +554,10 @@ def find_change_host_devices() -> list[ChangeHostDevice]:
                 for idx in indices:
                     device = _probe_slot(conn, idx)
                     if device:
+                        key = (device.wpid or iface.serial or device.name, device.device_index)
+                        if key in seen:
+                            continue
+                        seen.add(key)
                         found.append(device)
                         if not iface.is_receiver:
                             break
@@ -589,17 +601,23 @@ def switch_host(device: ChangeHostDevice, host_index: int) -> None:
 
 
 def options_plus_running() -> bool:
+    needles = ("logioptionsplus", "lghub", "logi options")
     try:
-        import subprocess
-
-        output = subprocess.check_output(
-            ["tasklist", "/FO", "CSV", "/NH"],
-            text=True,
-            stderr=subprocess.DEVNULL,
-            creationflags=0x08000000,  # CREATE_NO_WINDOW
-        )
+        if sys.platform == "win32":
+            output = subprocess.check_output(
+                ["tasklist", "/FO", "CSV", "/NH"],
+                text=True,
+                stderr=subprocess.DEVNULL,
+                creationflags=0x08000000,  # CREATE_NO_WINDOW
+            )
+        else:
+            output = subprocess.check_output(
+                ["ps", "ax", "-o", "comm="],
+                text=True,
+                stderr=subprocess.DEVNULL,
+            )
         lower = output.lower()
-        return "logioptionsplus" in lower or "lghub" in lower
+        return any(n in lower for n in needles)
     except Exception:
         log.debug("Could not inspect process list", exc_info=True)
         return False

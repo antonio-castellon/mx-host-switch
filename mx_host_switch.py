@@ -45,7 +45,9 @@ def _stdout_works() -> bool:
 
 
 def _attach_console() -> None:
-    """Give CLI flags a console when running the windowed .exe."""
+    """Give CLI flags a console when running the windowed Windows .exe."""
+    if sys.platform != "win32":
+        return
     if _stdout_works():
         return
     if not getattr(sys, "frozen", False):
@@ -141,15 +143,27 @@ def cmd_tray() -> int:
 
 def _acquire_single_instance() -> bool:
     """Prevent two tray icons. Returns False if another instance is already running."""
-    try:
-        import ctypes
+    if sys.platform == "win32":
+        try:
+            import ctypes
 
-        kernel32 = ctypes.windll.kernel32
-        handle = kernel32.CreateMutexW(None, False, "Local\\MXHostSwitch")
-        last = kernel32.GetLastError()
-        # Keep the handle alive for the process lifetime.
+            kernel32 = ctypes.windll.kernel32
+            handle = kernel32.CreateMutexW(None, False, "Local\\MXHostSwitch")
+            last = kernel32.GetLastError()
+            _acquire_single_instance._handle = handle  # type: ignore[attr-defined]
+            return last != 183  # ERROR_ALREADY_EXISTS
+        except Exception:
+            return True
+    try:
+        import fcntl
+
+        lock_path = app_config.app_data_dir() / "mxhost.lock"
+        handle = lock_path.open("w")
+        fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
         _acquire_single_instance._handle = handle  # type: ignore[attr-defined]
-        return last != 183  # ERROR_ALREADY_EXISTS
+        return True
+    except OSError:
+        return False
     except Exception:
         return True
 

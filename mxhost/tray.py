@@ -1,4 +1,4 @@
-"""Windows system-tray UI: right-click selects the target channel, double-click switches."""
+"""System-tray UI: pick the target channel, then switch (double-click on Windows)."""
 
 from __future__ import annotations
 
@@ -41,7 +41,7 @@ class TrayApp:
         self.cfg = load()
         self.devices: list[hidpp.ChangeHostDevice] = []
         self.device: Optional[hidpp.ChangeHostDevice] = None
-        self.icon: Optional[DoubleClickIcon] = None
+        self.icon: Optional[pystray.Icon] = None
         self._lock = threading.Lock()
         self.refresh(notify=False)
 
@@ -96,13 +96,19 @@ class TrayApp:
             self.cfg["target_host"] = target
             save(self.cfg)
 
+    def _switch_label(self) -> str:
+        if sys.platform == "win32":
+            return "Switch now (double-click)"
+        return "Switch now"
+
     def _tooltip(self) -> str:
+        action = "Double-click" if sys.platform == "win32" else "Switch now"
         if not self.device:
-            return f"{APP_NAME} — no mouse found\nDouble-click after the mouse is on this PC"
+            return f"{APP_NAME} — no mouse found\n{action} after the mouse is on this computer"
         return (
             f"{APP_NAME}\n"
             f"{self.device.name} on Channel {self.device.current_host + 1}\n"
-            f"Double-click → {self._target_text()}"
+            f"{action} → {self._target_text()}"
         )
 
     def _target_text(self) -> str:
@@ -124,7 +130,7 @@ class TrayApp:
         items: list[MenuItem] = [
             MenuItem(lambda item: self._status_item(item), lambda *_: None, enabled=False),
             Menu.SEPARATOR,
-            MenuItem("Switch now (double-click)", lambda *_: self.switch_to_selected()),
+            MenuItem(self._switch_label(), lambda *_: self.switch_to_selected(), default=True),
             Menu.SEPARATOR,
             MenuItem("Switch target", Menu(*self._channel_items())),
             Menu.SEPARATOR,
@@ -165,7 +171,8 @@ class TrayApp:
                     self.icon.update_menu()
                 except Exception:
                     pass
-            self._notify(f"Double-click will switch to Channel {index + 1}")
+            action = "Double-click" if sys.platform == "win32" else "Switch now"
+            self._notify(f"{action} will switch to Channel {index + 1}")
 
         return _handler
 
@@ -226,13 +233,16 @@ class TrayApp:
         icon.stop()
 
     def run(self) -> None:
-        self.icon = DoubleClickIcon(
-            "MXHostSwitch",
-            render_tray_image(64),
-            self._tooltip(),
-            menu=self._menu(),
-            on_double_click=self.switch_to_selected,
-        )
+        kwargs = {
+            "name": "MXHostSwitch",
+            "icon": render_tray_image(64),
+            "title": self._tooltip(),
+            "menu": self._menu(),
+        }
+        if sys.platform == "win32":
+            self.icon = DoubleClickIcon(on_double_click=self.switch_to_selected, **kwargs)
+        else:
+            self.icon = pystray.Icon(**kwargs)
         self.icon.run()
 
 

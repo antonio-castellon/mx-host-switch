@@ -1,20 +1,29 @@
 # MX Host Switch
 
-Windows tray app that switches a Logitech mouse to another Easy-Switch / multi-host channel using HID++ **CHANGE HOST** (`0x1814`).
+Tray app that switches a Logitech mouse to another Easy-Switch / multi-host channel using HID++ **CHANGE HOST** (`0x1814`).
 
-Double-click the tray icon to jump to a preselected channel. Right-click to pick that target (the tick marks the default).
+On Windows, double-click the tray icon to jump to a preselected channel. Right-click to pick that target (the tick marks the default). On Linux and macOS, use **Switch now** from the tray menu (or click the icon).
 
 ## Download (no compile)
 
-Get the ready-made Windows program from **[Releases](https://github.com/antonio-castellon/mx-host-switch/releases/latest)**:
+Get a ready-made program from **[Releases](https://github.com/antonio-castellon/mx-host-switch/releases/latest)**:
 
-1. Download `MXHostSwitch.exe`
-2. Double-click it (no installer)
-3. Look for the icon in the notification area (Windows 11 may hide it behind `^`)
+| File | Who it is for |
+| --- | --- |
+| `MXHostSwitch-windows-x64.exe` | Windows 10/11, 64-bit |
+| `MXHostSwitch-linux-x64` | Linux x86_64 |
+| `MXHostSwitch-macos-x64.zip` | macOS Intel |
+| `MXHostSwitch-macos-arm64.zip` | macOS Apple Silicon (M1/M2/M3/M4) |
 
-Windows may show **“Windows protected your PC”** because the file is not signed. Choose **More info** → **Run anyway**.
+No Python, no installer, no compile.
 
-The source in this repository is for people who want to build it themselves. Everyone else can ignore the rest of this page and use the `.exe` from Releases.
+**Windows:** double-click the `.exe`. If **Windows protected your PC** appears, choose **More info** → **Run anyway**. The icon may sit behind `^` in the notification area.
+
+**macOS:** unzip, then right-click the app → **Open** (Gatekeeper). The binary is not notarized.
+
+**Linux:** `chmod +x MXHostSwitch-linux-x64` and run it from a desktop session. Install AppIndicator/GTK if the tray icon does not appear (`gir1.2-ayatanaappindicator3-0.1` on Debian/Ubuntu). HID access may need a udev rule for vendor `046d` or membership in `plugdev`.
+
+The source in this repository is for people who want to build it themselves.
 
 ![Tray menu: MX Anywhere 2 on Channel 2, switch target Channel 1 selected](assets/tray-menu.png)
 
@@ -66,7 +75,7 @@ These **Logitech** mice are multi-channel / Easy-Switch and, in Solaar dumps or 
 - POP Mouse
 - Signature M750 / Signature AI Edition M750
 
-If several Logitech devices are connected, the tray app prefers a name matching `Anywhere 2`. For another model, set `preferred_name` in `%APPDATA%\MXHostSwitch\config.json` (for example `"Master 3"`) or run `mx_host_switch.py -l` and confirm CHANGE HOST is listed.
+If several Logitech devices are connected, the tray app prefers a name matching `Anywhere 2`. For another model, set `preferred_name` in the config file (for example `"Master 3"`) or run `mx_host_switch.py -l` and confirm CHANGE HOST is listed.
 
 ### Probably not compatible
 
@@ -103,8 +112,8 @@ If you see `CHANGE HOST devices:` and three channels, the app can drive it. If y
 
 ## Requirements
 
-- Windows 10 or 11
-- Python 3.13 (3.10+ should work)
+- Windows 10/11, Linux, or macOS
+- Python 3.13 (3.10+ should work) to run from source
 - A Logitech mouse with Easy-Switch / CHANGE HOST, currently connected to this PC
 - Close **Logi Options+** if HID++ access fails (it can lock the vendor HID collection)
 
@@ -144,7 +153,23 @@ Switch to channel `N` (1-based) and exit:
 .\build.ps1
 ```
 
-The built binary is **not** stored in git. Pre-built copies are attached to [GitHub Releases](https://github.com/antonio-castellon/mx-host-switch/releases). Use `build.ps1` only if you want to compile it yourself.
+The built binary is **not** stored in git. Pre-built copies for Windows, Linux, and macOS are attached to [GitHub Releases](https://github.com/antonio-castellon/mx-host-switch/releases).
+
+Local build:
+
+```powershell
+# Windows
+.\build.ps1
+```
+
+```bash
+# Linux / macOS
+python3 -m venv .venv
+.venv/bin/pip install -r requirements.txt
+.venv/bin/python scripts/build.py
+```
+
+GitHub Actions (`.github/workflows/release.yml`) builds all four artifacts when you push a `v*` tag.
 
 ## Tray usage
 
@@ -164,7 +189,11 @@ This PC’s current channel is labelled **(this PC)** in the menu. Double-click 
 
 ## Configuration
 
-Settings are stored in `%APPDATA%\MXHostSwitch\config.json`.
+Settings are stored in:
+
+- Windows: `%APPDATA%\MXHostSwitch\config.json`
+- macOS: `~/Library/Application Support/MXHostSwitch/config.json`
+- Linux: `~/.config/mxhostswitch/config.json`
 
 ```json
 {
@@ -186,7 +215,7 @@ Settings are stored in `%APPDATA%\MXHostSwitch\config.json`.
 | `preferred_name` | Substring match on the device name (default `Anywhere 2`) |
 | `channel_names` | Optional labels (`"0"` = Channel 1, `"1"` = Channel 2, …) |
 
-Log file: `%APPDATA%\MXHostSwitch\mxhost.log`.
+Log file: `mxhost.log` in the same folder.
 
 ## How it talks to the mouse
 
@@ -212,9 +241,11 @@ mx_host_switch.py   # entry point (tray / CLI)
 mxhost/
   hidpp.py          # HID++ discovery and CHANGE HOST
   tray.py           # system-tray UI
-  config.py         # %APPDATA% settings
+  config.py         # settings (AppData / Application Support / ~/.config)
   icon.py           # generated tray / exe icon
-build.ps1           # PyInstaller one-file build
+build.ps1           # Windows PyInstaller one-file build
+scripts/build.py    # cross-platform PyInstaller build (CI)
+.github/workflows/release.yml
 requirements.txt
 ```
 
