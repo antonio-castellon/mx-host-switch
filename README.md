@@ -4,6 +4,18 @@ Windows tray app that switches a Logitech mouse to another Easy-Switch / multi-h
 
 Double-click the tray icon to jump to a preselected channel. Right-click to pick that target (the tick marks the default).
 
+## Download (no compile)
+
+Get the ready-made Windows program from **[Releases](https://github.com/antonio-castellon/mx-host-switch/releases/latest)**:
+
+1. Download `MXHostSwitch.exe`
+2. Double-click it (no installer)
+3. Look for the icon in the notification area (Windows 11 may hide it behind `^`)
+
+Windows may show **“Windows protected your PC”** because the file is not signed. Choose **More info** → **Run anyway**.
+
+The source in this repository is for people who want to build it themselves. Everyone else can ignore the rest of this page and use the `.exe` from Releases.
+
 ![Tray menu: MX Anywhere 2 on Channel 2, switch target Channel 1 selected](assets/tray-menu.png)
 
 ## Why this exists
@@ -72,7 +84,7 @@ Switch to channel `N` (1-based) and exit:
 .\build.ps1
 ```
 
-The built binary is **not** in this repository. Build it locally if you want a single `.exe`.
+The built binary is **not** stored in git. Pre-built copies are attached to [GitHub Releases](https://github.com/antonio-castellon/mx-host-switch/releases). Use `build.ps1` only if you want to compile it yourself.
 
 ## Tray usage
 
