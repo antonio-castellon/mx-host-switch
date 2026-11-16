@@ -72,6 +72,7 @@ jobs:
           name: ${{ matrix.artifact }}
           path: ${{ matrix.artifact }}
           if-no-files-found: error
+          retention-days: 7
 
   publish:
     needs: build
